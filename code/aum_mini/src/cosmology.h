@@ -68,10 +68,10 @@ class cosmology
     private:
     /// Some constants
 #ifndef SWIG
-    const static double kmpspMpctoGyr=977.813952;
-    const static double gee=4.2994e-9;
-    const static double c=299792.458;
-    const static double e=2.71828183;
+    const double kmpspMpctoGyr=977.813952;
+    const double gee=4.2994e-9;
+    const double c=299792.458;
+    const double e=2.71828183;
 
 #else
     const double kmpspMpctoGyr=977.813952;
@@ -118,8 +118,8 @@ class cosmology
     double PSL0_dlow, PSL0_dhigh;
     double PSL0_xlow,PSL0_ylow,PSL0_xhigh,PSL0_yhigh;
 #ifndef SWIG
-    const static double kmin=-5.0;
-    const static double kmax=8.0;
+    const double kmin=-5.0;
+    const double kmax=8.0;
 #else
     const double kmin=-5.0;
     const double kmax=8.0;
@@ -127,10 +127,10 @@ class cosmology
 
     /// Numerical interpolation for ukofm
 #ifndef SWIG
-    const static double cmin=-1.0;
-    const static double cmax=3.5;
-    const static double krsmax= 8.0;
-    const static double krsmin=-6.0;
+    const double cmin=-1.0;
+    const double cmax=3.5;
+    const double krsmax= 8.0;
+    const double krsmin=-6.0;
     const static int Nuk=100;
 #else
     const double cmin=-1.0;
