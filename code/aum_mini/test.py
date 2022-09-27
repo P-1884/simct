@@ -8,7 +8,7 @@ f=open("configfile");
 for line in f:
     linecont=line.strip("\n")[1:];
     sys.path.append(linecont);
-
+sys.path.append('/Users/hollowayp/simct/code/aum_mini/cosmic/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/')
 import cosmology as c;
 
 aa=c.cosmology();
