@@ -18,6 +18,18 @@ from input_qg import *
 ###########################################################
 
 print "Reading foreground and background source catalogs and field_ids";
+#0,       1,  2,  3,       4,        5
+#TILE_NO. RA DEC TILE_ID GALAXY_ID Z_REDSHIFT
+#6,    7,      8,     9,    10
+#z_low z_high U_MAG G_MAG R_MAG
+#11,    12    13,   14,        15
+#I_MAG Y_MAG Z_MAG u_mag_err g_mag_err
+#16,         17,      18,        19,      20
+#r_mag_err i_mag_err y_mag_err z_mag_err ra_1
+#21,     22,           23,          24,    25
+#dec_1 THETA_J2000 errtheta_j2000 A_IMAGE B_IMAGE
+#26,           27,       28,     29,        30
+#erra_image errb_image flags  class_star  mag_auto
 gra,gdec,zd,gu,gg,gr,gi1,gy,gz,majax,minax,ell_pa=np.loadtxt(lenscatalog,usecols=(1,2,5,8,9,10,11,12,13,24,25,22),unpack=True);
 indx,gid,gfld=np.loadtxt(lenscatalog,dtype={'names':('indx','gid','gfld'),'formats':('S3','i8','S13')},usecols=(0,4,3),unpack=True);
 
