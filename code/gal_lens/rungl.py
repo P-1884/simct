@@ -28,6 +28,7 @@ def worker(num,nproc):
 
 ## Run this code faster by specifying Nproc (no. of processors)
 jobs=[];
+Nproc=4
 for i in range(Nproc):
     p = multiprocessing.Process(target=worker,args=(i,Nproc))
     jobs.append(p);

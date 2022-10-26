@@ -8,7 +8,7 @@ import sys
 import gensrcpos as scp
 import genimg as gn
 from input_qg import *
-
+from tqdm import tqdm
 ###########################################################
 ## INPUTS: 
 ## Foreground galaxy catalog with lens model properties as output by
@@ -24,18 +24,14 @@ from input_qg import *
 
 def worker(num,nproc):
     ## Read the lens galaxy catalog, real bkg galaxy color catalog and 
-    ## bkg galaxy catalog generated for each potential lens 
+    ## bkg galaxy catalog generated for each potential lens
     gid0,gra0,gdec0,zd0,gu0,gg0,gr0,gi0,gz0,ell0,ell_pa0,sh_str0,sh_pa0,idx0=np.loadtxt('intmpar0.txt',usecols=(0,1,2,5,6,7,8,9,10,11,12,13,14,15),unpack=True);
-
     if(gra0.ndim==0):
         gfld0,indx0=np.loadtxt('intmpar0.txt',dtype={'names':('gfld0','indx0'),'formats':('S13','S3')},usecols=(3,4),unpack=True);
     else:
         gfld0,indxno0=np.loadtxt('intmpar0.txt',dtype={'names':('gfld0','indxno0'),'formats':('S13','S3')},usecols=(3,4),unpack=True);
-     
     zsc_g,zsc_mn,zsc_mx,su,sg,sr,si,sz=np.loadtxt(bkggalcatalog,usecols=(5,6,7,8,9,10,11,12),unpack=True);
-
     idxt0,sigm0,rein0,smii0,zs0=np.loadtxt("all_gal_mod.txt",unpack=True);
-    
     rein0=rein0/pixsc;
 
     flxrefg=10.**(-0.4*(mi_lim_cfht_g-zpt));
@@ -47,7 +43,6 @@ def worker(num,nproc):
     
     ## Output catalogs
     fp0=open('fpar0_%d.txt'%(num),'w');
-
     np.random.seed(num*10+29824);
 
     ## For bkg gal properties
@@ -75,7 +70,6 @@ def worker(num,nproc):
     iimax=np.int(zd0.size*(num+1)/nproc);
     if(num==nproc-1):
         iimax=zd0.size;
-    
     ## For the following loop to work, the all_xxx.txt and intmpar?.txt files
     ## need to be sorted in ascending order
     
@@ -83,9 +77,8 @@ def worker(num,nproc):
     ## in order to extract colors 
     #magdiff=0.1;
     zdiffg=zsc_mx-zsc_mn;
-    
     ## This loop is run for each lens in the lens catalog
-    for ii in range(iimin,iimax):
+    for ii in tqdm(range(iimin,iimax)):
         ############
 	## PART 1- Select one bkg source from multiple sources 
         ############
@@ -94,11 +87,9 @@ def worker(num,nproc):
             kkh=idxt0.size;
         else:
             kkh=uid0[ii+1];
-	
 	## For each source, extract source position, flux of the 2nd brightest image, total
 	## magnification of the lensed source and number of lensed images
         srcxt,srcyt,smagt,sumt,imtno=scp.srcposrng(rein0[kkl:kkh],ell0[ii],ell_pa0[ii],sh_str0[ii],sh_pa0[ii],ii+1,flagg,int(gid0[ii]),num);
-    
         cnt0=np.arange(kkh-kkl)*0;
         jj=0;
         kk=kkl;
@@ -111,7 +102,6 @@ def worker(num,nproc):
             if(flx2>flxrefg and flxall<flxlimbrt):
                 cnt0[jj]=kk;
                 jj=jj+1;
-        
         ## Choose one source randomly from the sources which satisfy the flux
         ## limits
         if(jj>0):
@@ -127,7 +117,6 @@ def worker(num,nproc):
         srcy0[ii]=srcyt[nq];
         smag0[ii]=smagt[nq];
         imno0[ii]=imtno[nq];
-    
         ############
 	## PART 2- Extract gal colors from real gal catalog
         ############
@@ -142,7 +131,6 @@ def worker(num,nproc):
                 if (abs(zs_n0[ii]-zsc_g[jj])<=zdiffg_relaxed*zdiffg[jj] and sg[jj]-si[jj]<gicolorg_relaxed):
                     indx_n[ll]=jj;
                     ll=ll+1;
-
         indx_n=indx_n[0:ll];
         nn=np.random.randint(0,ll);
         ncnt0=indx_n[nn];
@@ -152,7 +140,6 @@ def worker(num,nproc):
         smg0[ii]=smi_n0[ii]+sg[ncnt0]-si[ncnt0];
         smr0[ii]=smi_n0[ii]+sr[ncnt0]-si[ncnt0];
         smz0[ii]=smi_n0[ii]+sz[ncnt0]-si[ncnt0];
-
         ## Generate random ellipticities, PA and size for the background source
         ell_s[ii]=np.random.uniform(bkggal_ell_low,bkggal_ell_high);
         ell_pa_s[ii]=np.random.uniform(bkggal_ellpa_low,bkggal_ellpa_high);
@@ -160,14 +147,13 @@ def worker(num,nproc):
 
 	## Save catalog with all the lens+source parameters
         fp0.write('%d %f %f %s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %f %f %f\n'%(gid0[ii],gra0[ii],gdec0[ii],gfld0[ii],indxno0[ii],zd0[ii],gu0[ii],gg0[ii],gr0[ii],gi0[ii],gz0[ii],ell0[ii],ell_pa0[ii],reinst0[ii],sh_str0[ii],sh_pa0[ii],srcx0[ii],srcy0[ii],smu0[ii],smg0[ii],smr0[ii],smi0[ii],smz0[ii],zs_n0[ii],smag0[ii],imno0[ii],ell_s[ii],ell_pa_s[ii],reff_s[ii]));
-
         ## Generate lensmodel inp files
         gn.genimg_gg(reinst0[ii],ell0[ii],ell_pa0[ii],sh_str0[ii],sh_pa0[ii],smu0[ii],smg0[ii],smr0[ii],smi0[ii],smz0[ii],srcx0[ii],srcy0[ii],ell_s[ii],ell_pa_s[ii],reff_s[ii],zpt,gid0[ii],indxno0[ii],num);
-	
-    fp0.close();    
+    fp0.close();
 
 ## Run this code faster by specifying Nproc (no. of processors)
 jobs=[];
+#Nproc=1
 for i in range(Nproc):
     p = multiprocessing.Process(target=worker,args=(i,Nproc));
     jobs.append(p);

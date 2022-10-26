@@ -15,7 +15,7 @@ else:
 
 hdulist=pyfits.open(fname1,mode='update');
 ##hdulist=pyfits.open(fname1);
-hdulist.info();
+#hdulist.info();
 
 data=hdulist[0].data;
 try:

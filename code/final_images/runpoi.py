@@ -16,11 +16,11 @@ def worker(num,nproc):
     if(num==nproc-1):
         iimax=len(files);
     for ii in range(iimin,iimax):	
-	call("./poisson.py %s 2>&1"%(files[ii]),shell=1);
+	call("python2 ./poisson.py %s 2>&1"%(files[ii]),shell=1);
 
 jobs=[];
 ## Adjust Nproc according to no. of processors on your machine
-Nproc=22;
+Nproc=4;
 for i in range(Nproc):
     p = multiprocessing.Process(target=worker,args=(i,Nproc))
     jobs.append(p);

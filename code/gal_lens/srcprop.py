@@ -216,7 +216,7 @@ def findzgal(ztry,vdisp,zred,q,Ntarget):
 def findmaggal(magtry,zsrc,Phitarget):
   z0=0.13*magtry-2.2;
   beta=1.5;
-  Pmagzs=beta*(zsrc/z0)**2.0*exp(-(zsrc/z0)**beta)/z0;
+  Pmagzs=beta*(zsrc/z0)**2.0*exp(-(zsrc/z0)**beta)/z0; #This line is Eqn 7 in the SWII paper (Gamma(2)=1).
   return Phitarget-nsmlim_gal_spl(magtry)*Pmagzs;
 
 def Nsrc_gal(magg,magr,zred,q):

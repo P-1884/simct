@@ -11,27 +11,28 @@ import time
 ## simulated lensed images
 
 ## Needs compose.py from HumVI package
-call("rm outfits1/*png",shell=1);
+#call("rm outfits1/*png",shell=1);
 
 def worker(num,Nproc):
-    fname=glob("outfits1/CFHTLS_*_i.fits");
-
+    fname=glob("outfits1/CFHTLS_*_g.fits");
     iimin=np.int(len(fname)*num/Nproc);
     iimax=np.int(len(fname)*(num+1)/Nproc);
     if(num==Nproc-1):
-	iimax=len(fname);
-
-    for ii in range(iimin,iimax):
-	fil=fname[ii];
-	subst=fil[0:len(fil)-7];
-	command='./compose.py -s 0.4,0.6,1.7 -z 0.0 -p 1.0,0.09 -m -1.0  -o %s_o_gri.png %s_i.fits %s_r.fits %s_g.fits'%(subst,subst,subst,subst);
-	call(command,shell=1);
+        iimax=len(fname);
+    for ii in range(iimin,iimax):#REMOVED TEMPORARILY
+#    for ii in range(iimin,iimin+2):
+        fil=fname[ii];
+        subst=fil[0:len(fil)-7];
+#        print("python2 ./compose2.py -s 0.4,0.6,1.7 -z 0.0 -p 1.0,0.09 -m -1.0  -o %s_o_gri.png %s_i.fits %s_r.fits %s_g.fits"%(subst,subst,subst,subst))
+        command='python2 /Users/hollowayp/simct/code/final_images/HumVI/HumVI.py -s 0.4,0.6,1.7 -z 0.0 -p 1.0,0.09 -m -1.0  -o %s_o_gri.png %s_i.fits %s_r.fits %s_g.fits'%(subst,subst,subst,subst);
+        call(command,shell=1);
 
 
 jobs=[];
 ## Adjust Nproc according to no. of processors on your machine
-Nproc=22;
+Nproc=4;
 for i in range(Nproc):
+    print('starting jobs')
     p = multiprocessing.Process(target=worker,args=(i,Nproc))
     jobs.append(p);
     p.start();

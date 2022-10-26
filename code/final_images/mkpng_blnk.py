@@ -32,7 +32,7 @@ def worker(num,Nproc):
 
 jobs=[];
 ## Adjust Nproc according to no. of processors on your machine
-Nproc=22;
+Nproc=4;
 for i in range(Nproc):
     p = multiprocessing.Process(target=worker,args=(i,Nproc))
     jobs.append(p);

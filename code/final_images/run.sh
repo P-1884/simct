@@ -5,20 +5,28 @@ function partone() {
     dirfitsname=$2
     cp $fil1 ./finalpar.txt
     ##############################
-
+    echo $1
     sort -k5 finalpar.txt > finalpar_srt.txt
-    ./genpixlist.py
-    rm fpxlst
-    sh rgetpix
-    paste inpgal0 fpxlst > inpgal.txt
+    echo genpixlist.py
+    python3 ./genpixlist.py #requires finalpar_srt, makes: inpgal0,fpxlst,rgetpix,imdir/pxlst. fpxlst is the x,y position within the main tile, not within the cutout.
+#    sh rgetpix #PH: have removed this as generating the pixel coordinates is now done in genpixlist.py.
+    paste inpgal0 fpxlst > inpgal.txt #inpgal.txt contains: number (not sure what) | ra | dec | tile name (e.g. 085011-051100) | tile indx (e.g. 073) | pixel val 1 | pixel val 2 corresponding to that ra/dec
+    #Next command takes values in inpgal.txt and then copies them into pximtag, with some adjustments (see 50*int... function) for the last one.
     awk '{printf(" %s %f %f %s %s %f %f %04d \n",$1,$2,$3,$4,$5,$6,$7,50*int(($6-1)/386)+int(($7-1)/386)+1)}' inpgal.txt > pximtag
-    ./gencombim2.py $dirfitsname inpgal.txt > logcomb
-
+    #Writes output to logcomb:
+    echo gencombim2
+    python2 ./gencombim2.py /Users/hollowayp/simct/code/final_images/Final_Output/ inpgal.txt > logcomb
+#    python2 ./gencombim2.py $dirfitsname inpgal.txt > logcomb #PH Oct 2022: needed to make an empty file called 'gg'
+    #NOTE adding in running rcpyall here, as doesn't seem to be called anywhere?
+    #NEED TO BE IN IMDIR WHEN RUN THIS:
+    cd /Users/hollowayp/simct/code/final_images/imdir
+    ./rcpyall
+    cd /Users/hollowayp/simct/code/final_images
     ## Run the following two commands either here or right at the beginning
     ## Copy exptime from the parent tiles to their respective sim images 
-    # sh rchd1
+    # sh rchd1 #PH: Have removed this as this copying of the header is now done within genpixlist.py. Previously, the commands were written within genpixlist.py and then executed with this 'sh rchd1' line, but now they are executed within genpixlist.py
     ## Add poisson noise to the simulated arc pixels (gout/imoutp*) before merging with the real data in the parent tile
-    #./runpoi.py > poiout 
+#    python2 ./runpoi.py > poiout
     
     ### Check if files look alright 
     echo "imdir/idpxlst"
@@ -29,8 +37,9 @@ function partone() {
     awk '{print $1}' inpgal.txt | sort -u | wc -l
     wc -l logcomb
 
-    cd imdir
-     ./runcombim.py
+    cd imdir #need to move to imdir as some of the directories in runcombim.py depend on it
+    echo runcombim.py
+    python2  /Users/hollowayp/simct/code/final_images/runcombim.py
     cd ..
     
     ### Check if files look alright 
@@ -43,9 +52,9 @@ function partone() {
 function parttwo(){
     outdirname=$1
     mkdir $outdirname
-    ./mkpng_blnk.py
-    ./mkpng_cfht.py
-    ./mkpng_mask.py
+    python2 ./mkpng_blnk.py
+    python2 ./mkpng_cfht.py
+    python2 ./mkpng_mask.py
     ./mkpng_crsh.py $outdirname/png
     echo "blanksims/*png ",`ls -l blanksims/*png | wc -l`
     echo "outfits1/*_o_gri.png ",`ls -l outfits1/*_o_gri.png | wc -l`
@@ -78,39 +87,44 @@ function partthree(){
 ## RUN THIS FOR THE FIRST TIME TO SET UP ALL THE INPUT FILES
 ###############################
 
-# mkdir fitsfiles outfits gout  blanksims imdir  outfits1
+ mkdir fitsfiles outfits gout  blanksims imdir  outfits1
 
 ## Create a link to the color composite making code - HumVI/compose.py
-# ln -s /path_where_compose.py_from_HumVI_is_located/compose.py .
+ ln -s /Users/hollowayp/simct/code/final_images/HumVI/humvi/compose.py .
 
 ## Create small cutouts of survey from the parent tiles and creates
 ## the file "cutoutlist"
 ## NOTE: this is the same dir path that will be provided to partone()
-# ./mkcutouts.py /path_of_remote_dir_where_real_image_cutouts_will_be_stored 440 386 19354
+echo mkcutouts.py
+#python2 ./mkcutouts.py /Users/hollowayp/simct/code/final_images/Final_Output 440 386 19354 #see inside mkcutouts.py for what these values mean!
+
 
 ## Create local copies of the simulated images and lens catalogs
 ## E.g. for galaxy-galaxy lens
-#cp ../gal_lens/gout/imoutp*fits gout/
-#cp ../gal_lens/finalpar_g.txt ./finalpar.txt
-  
+cp ../gal_lens/gout/imoutp*fits gout/
+cp ../gal_lens/finalpar0.txt ./finalpar.txt #HAVE CHANGED FIRST ONE HERE TO FINALPAR0.TXT TEMPORARILY, FROM finalpar_g.txt (**)
+echo finished_copying
 ## Run the following two commands either here or from within partone() 
-## 1. Copy exptime from the parent tiles to their respective sim images 
-#./copyhdr.py
+## 1. Copy exptime from the parent tiles to their respective sim images
+echo copyhdr.py
+python3 ./copyhdr.py #This one **might??** to be in python3 otherwise it crashes. But might have been a different bug causing this so might be ok with python2.
 ## 2. Add poisson noise to the simulated arc pixels (gout/imoutp*) before merging with the real data in the parent tile
-#./runpoi.py > poiout 
+echo runpoi.py
+#python2 ./runpoi.py > poiout
 
 ###############################
 ## MAIN
 ###############################
 ## Input param file and output dir name
-#fil1=./finalpar.txt
-#dirfitsname=/path_of_remote_dir_where_real_image_cutouts_will_be_stored
-#outdirname=galw1
+fil1=./finalpar.txt
+dirfitsname=/Users/hollowayp/simct/code/final_images/Final_Output/
+outdirname=galw1
 #
 ### Generates and run scripts which allow you to merge the simulated lensed images with the real
 ### survey image cutouts (FITS files) using the lensing galaxy position as a reference point     
 ### NOTE: this is the same dir path that was provided to "mkcutouts.py"
-#partone $fil1 $dirfitsname 
+echo partone
+partone $fil1 $dirfitsname
 #
 ### Generates final color png images with an alpha layer of mask added to
 ### indicate the location of the simulated lensed images and compressed using "crush"

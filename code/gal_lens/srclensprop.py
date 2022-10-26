@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from math import *
-from pylab import *
+#from pylab import *
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 import numpy as np
@@ -83,7 +83,7 @@ def getcaustics(b_I,q):
       if(u[ii]==0.):
 	  t1[ii]=np.pi/2.;
       else:
-	  t1[ii]=arctan(np.abs(v[ii]/u[ii]));
+	  t1[ii]=np.arctan(np.abs(v[ii]/u[ii]));
       if(t[ii]>pi/2.0):
 	  t1[ii]=pi-t1[ii];
   
@@ -91,7 +91,7 @@ def getcaustics(b_I,q):
       if(up[ii]==0.):
 	  t2[ii]=np.pi/2.;
       else:
-	  t2[ii]=arctan(np.abs(vp[ii]/up[ii]));
+	  t2[ii]=np.arctan(np.abs(vp[ii]/up[ii]));
       if(t[ii]>pi/2.0):
 	  t2[ii]=pi-t2[ii];
   c1=interp1d(t1,r1,kind='cubic');

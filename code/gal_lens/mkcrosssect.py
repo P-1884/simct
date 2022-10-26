@@ -6,8 +6,8 @@ import srclensprop as slp
 
 try:
     with open('Crosssect.dat'):
-	print "Crosssect.dat already exists, exiting without creating a new file"
-	exit();
+        print "Crosssect.dat already exists, exiting without creating a new file"
+        exit();
 except IOError:
       print "File Crosssect.dat does not exist, creating it now";
       qi=np.arange(0.1,1.0,0.001);

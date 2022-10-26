@@ -3,14 +3,16 @@
 ## see IMPORTANT NOTE in the file ../README
 import sys
 from math import *
-
+import numpy as np
 ## Setting up Cosmology
 ##################
 ## Add the full path to aum_mini and the configfile below
-ff=open("/disk2/anupreeta/simcode/aum_mini/configfile");
+ff=open("/Users/hollowayp/simct/code/aum_mini/configfile");
 for line in ff:
     linecont=line.strip("\n")[1:];
-    sys.path.append("/disk2/anupreeta/simcode/aum_mini/"+linecont);
+    sys.path.append("/Users/hollowayp/simct/code/aum_mini/"+linecont);
+
+sys.path.append('/Users/hollowayp/simct/code/aum_mini/cosmic/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/')
 
 import cosmology as c
 
@@ -31,13 +33,13 @@ cc=c.cosmology(p);
 ## Some standard paths and constants
 ##################
 ## Input foreground and background catalogs
-lenscatalog='../../catalogs/test_gal.txt'
-##lenscatalog='../../catalogs/inp_gal_frg_cat_w2.txt'
+#lenscatalog='../../catalogs/test_gal.txt'
+lenscatalog='../../catalogs/inp_gal_frg_cat_w2.txt'
 bkgqsocatalog="../../catalogs/inp_qso_bkg_cat.txt"
 bkggalcatalog="../../catalogs/inp_gal_bkg_cat.txt"
 
 ## Path to keeton's lensmodel executable
-lenscode="/home/anupreeta/soft/lensmodel"
+lenscode="/Users/hollowayp/Documents/gravlens/lensmodel"
 
 ## Constants
 gee=4.2994e-9;
@@ -50,7 +52,7 @@ pixsc=0.186;
 zpt=30;
 
 ## No. of processors to run this code on
-Nproc=22;
+Nproc=4;
 
 ## See main.py
 ##################
