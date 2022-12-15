@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 from math import *
+import pandas as pd
 import numpy as np
 import sys
 from subprocess import call
 import multiprocessing
 import time
 from input_qg import *
-
+from filenames import survey_func
+survey=survey_func()
 ###########################################################
 ## INPUTS:
 ## Foreground galaxy catalog (same input as used for main.py), 
@@ -30,9 +32,27 @@ print "Reading foreground and background source catalogs and field_ids";
 #dec_1 THETA_J2000 errtheta_j2000 A_IMAGE B_IMAGE
 #26,           27,       28,     29,        30
 #erra_image errb_image flags  class_star  mag_auto
-gra,gdec,zd,gu,gg,gr,gi1,gy,gz,majax,minax,ell_pa=np.loadtxt(lenscatalog,usecols=(1,2,5,8,9,10,11,12,13,24,25,22),unpack=True);
-indx,gid,gfld=np.loadtxt(lenscatalog,dtype={'names':('indx','gid','gfld'),'formats':('S3','i8','S13')},usecols=(0,4,3),unpack=True);
-
+if survey=='CFHTLS':
+  gra,gdec,zd,gu,gg,gr,gi1,gy,gz,majax,minax,ell_pa=np.loadtxt(lenscatalog,usecols=(1,2,5,8,9,10,11,12,13,24,25,22),unpack=True);
+  indx,gid,gfld=np.loadtxt(lenscatalog,dtype={'names':('indx','gid','gfld'),'formats':('S3','i8','S13')},usecols=(0,4,3),unpack=True);
+if survey=='VIDEO':
+      lenscatalog_db = pd.read_csv(lenscatalog,sep=' ')
+      gra = np.array(lenscatalog_db['RA'])
+      gdec = np.array(lenscatalog_db['Dec'])
+      zd= np.array(lenscatalog_db['z'])
+      gu= np.array(lenscatalog_db['Z_mag'])
+      gg= np.array(lenscatalog_db['Y_mag'])
+      gr= np.array(lenscatalog_db['J_mag'])
+      gi1= np.array(lenscatalog_db['H_mag'])
+      gz= np.array(lenscatalog_db['K_mag'])
+      gy= np.array(lenscatalog_db['H_mag']) #This is merged with i band below so just making it identical. Within main.py,only have ugriz not ugrizy.
+      majax= np.array(lenscatalog_db['A_image'])
+      minax= np.array(lenscatalog_db['B_image'])
+      ell_pa= np.array(lenscatalog_db['theta_J2000'])
+#
+      indx=np.array(lenscatalog_db['TileN'])
+      gid=np.array(lenscatalog_db['GalID'])
+      gfld=np.array(lenscatalog_db['TileID'])
 ## Combine i-y band into one
 gi=gi1*1.0;
 for jj in range (gi1.size):

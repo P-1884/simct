@@ -18,8 +18,13 @@ call("rm ../outfits/CF*fits",shell=1);
 call("rm ../outfits1/CF*fits",shell=1); 
 call("rm LOG*.dat",shell=1); '''
 from tqdm import tqdm
+home_directory = os.getcwd().split('simct',1)[0]+'simct'
+sys.path.append(home_directory+'/code/gal_lens')
+from filenames import filenames,survey_func
+survey=survey_func()
 #NEEDT TO BE IN IMDIR DIRECTORY TO RUN THIS CODE:
-os.chdir('/Users/hollowayp/simct/code/final_images/imdir')
+os.chdir(home_directory+'/code/final_images/imdir')
+c_prefix,t_prefix,t_affix = filenames(survey)
 def worker(num,nproc):
     files=glob.glob("rmgcpy_*") #e.g. cp dirfitsname/CFHTLS_079_1608_u.fits ../outfits/CFHTLS_079_1608_u_t.fits
     files1=glob.glob("rmrg_*") #e.g. fimgmerge ../outfits/CFHTLS_095_1278_u_t.fits  @lstfile_095_1278_u ../outfits1/CFHTLS_095_1278_u.fits
@@ -33,7 +38,7 @@ def worker(num,nproc):
         print "Running copy %s"%(files[ii]);
         sys.stdout.flush();
         call("./%s 2>&1"%(files[ii]),shell=1); #The 2>&1 means it redirects the 'standard error' (by default denoted by 2) to a file called 1. Think this redirection is probably neglectable.
-    fid,gid=np.loadtxt("/Users/hollowayp/simct/code/final_images/imdir/idpxlst",dtype={'names':('fid','gid'),'formats':('S8','d')},usecols=([0,1]),unpack=1);
+    fid,gid=np.loadtxt(home_directory+"/code/final_images/imdir/idpxlst",dtype={'names':('fid','gid'),'formats':('S8','d')},usecols=([0,1]),unpack=1);
     done=False;
     cntloop=0;
     while(not done):
@@ -43,7 +48,7 @@ def worker(num,nproc):
             for col in ['u','g','r','i','z']:
 #                if col=='g' and fid[ii]=='078_2491':
 #                    print('here!')
-                ff="../outfits/CFHTLS_%s_%s_t.fits"%(fid[ii],col);
+                ff="../outfits/'+c_prefix+'_%s_%s_t.fits"%(fid[ii],col);
                 if(not os.path.isfile(ff)):
                     if(cntloop%1000==0):
                         pass
@@ -60,8 +65,8 @@ def worker(num,nproc):
 #        print "Running merge %s"%(files[ii]);
         sys.stdout.flush();
 #        call("./%s > LOG.%s.dat 2>&1 "%(files1[ii],files1[ii]),shell=1);
-        file_i =open('/Users/hollowayp/simct/code/final_images/imdir/'+files1[ii])
-        #file_i = open('/Users/hollowayp/simct/code/final_images/imdir/rmrg_082')
+        file_i =open(home_directory+'/code/final_images/imdir/'+files1[ii])
+        #file_i = open(home_directory+'code/final_images/imdir/rmrg_082')
         for line in file_i:
             if line[0:4]=='fimg':
                 line_i = line.split()
@@ -69,6 +74,7 @@ def worker(num,nproc):
                 superimposed_images_file_i=superimposed_images_file_i.replace('@','')
                 if input_file_i=='../outfits/CFHTLS_073_0904_g_t.fits':
                     print('HERE',input_file_i,superimposed_images_file_i,output_file_i)
+                print(input_file_i,superimposed_images_file_i,output_file_i)
                 fimgmerge_astropy(input_file_i,superimposed_images_file_i,output_file_i)
                 print('done')
     for ii in range(iimin,iimax):
@@ -91,19 +97,30 @@ for i in range(Nproc):
 #fimgmerge_astropy('../outfits/CFHTLS_078_2051_g_t.fits',superimposed_images_file_i,'testfile_can_be_deleted')
 
 #Checking if anything has been added to the files:
+#NB: Run this in python3, otherwise get segmentation fault:11 for some reason.
 import glob
 from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as pl
 from tqdm import tqdm
 from matplotlib import colors
-f_names_1 = glob.glob('/Users/hollowayp/simct/code/final_images/outfits1/*')
-f_names_0 = glob.glob('/Users/hollowayp/simct/code/final_images/outfits1/*') #i.e. identical to previous line
+import os
+import sys
+home_directory = os.getcwd().split('simct',1)[0]+'simct'
+
+#NEED TO DEFINE SURVEY HERE:
+survey='VIDEO'
+f_names_1 = glob.glob(home_directory+'/code/final_images/outfits1/*')
+f_names_0 = glob.glob(home_directory+'/code/final_images/outfits1/*') #i.e. identical to previous line
 f_names_0 = [f_names_0[i].replace('.fits','_t.fits') for i in range(len(f_names_0))]
 f_names_0 = [f_names_0[i].replace('outfits1','outfits') for i in range(len(f_names_0))]
+f_names_0 = [element for element in f_names_0 if survey in element]
+f_names_1 = [element for element in f_names_1 if survey in element]
+#f_names_0 = ['/Users/hollowayp/simct/code/final_images/outfits1/VIDEO_001_1053_k_v.fits']
+#f_names_1 = ['/Users/hollowayp/simct/code/final_images/outfits/VIDEO_001_1053_k_v_t.fits']
 #summing to 0 means they are identical (which is not what's supposed to happen):
 print('starting test')
-n=0
+n=1
 for i in tqdm(range(len(f_names_0))):
     a = fits.open(f_names_0[i])[0].data
     b = fits.open(f_names_1[i])[0].data
@@ -114,6 +131,6 @@ for i in tqdm(range(len(f_names_0))):
         ax[1].imshow(b,origin='lower',norm=colors.LogNorm())
         ax[2].imshow(a-b,origin='lower')
         pl.show()
+        if n>=10:
+            break
         n+=1
-    if n>=10:
-        break

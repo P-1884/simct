@@ -5,6 +5,12 @@ import sys
 from StringIO import StringIO
 from subprocess import call
 from fitscopy_astropy import fitscopy_astropy
+import os
+home_directory = os.getcwd().split('simct',1)[0]+'simct'
+survey=survey_func()
+sys.path.append(home_directory+'/code/gal_lens')
+from filenames import bands,survey_func,filenames
+c_prefix,t_prefix,t_affix=filenames(survey)
 ## Generate a file which upon running will make cutouts of given size and offsets for each tile in the input file
 ## Also, creates cutoutlist
 
@@ -16,7 +22,7 @@ wd=440;
 dx=386;
 
 ## Total number of cutouts is Ntot**2
-Ntotpix=19354;
+Ntotpix=19354; #WHAT IS THIS NUMBER?
 Ntot=Ntotpix/dx;
 
 if(len(sys.argv)!=5):
@@ -31,10 +37,12 @@ else:
     Ntotpix=int(sys.argv[4]);
 
 ## Read the tile IDs and names
-indxno,fldid=np.loadtxt('fieldid_sort',dtype={'names':('indxno','fldid'),'formats':('S9','S13')},usecols=(0,1),unpack=True);
+if survey=='CFHTLS':
+    indxno,fldid=np.loadtxt('fieldid_sort',dtype={'names':('indxno','fldid'),'formats':('S9','S13')},usecols=(0,1),unpack=True);
+if survey=='VIDEO':
+    indxno,fldid=np.loadtxt('fieldid_sort_video',dtype={'names':('indxno','fldid'),'formats':('S9','S13')},usecols=(0,1),unpack=True);
 
-band=['u','g','r','i','z'];
-#band = ['r','i']
+band=bands(survey);
 Ntotb=len(band);
 
 ## A combined executable file for all tiles
@@ -49,13 +57,13 @@ for kk in tqdm(range(fldid.size)):
     ## Executable file for each tile
     fp=open('imdir/rcutout_'+indxno[kk],'w');
     fp.write('#!/bin/bash \n');
-    for ii in range(Ntot):
+    for ii in tqdm(range(Ntot)):
         for jj in range(Ntot):
             for ll in range(Ntotb):
-                fp.write('fitscopy.out fitsfiles/CFHTLS_W_%s_%s_T0007_MEDIAN.fits[%d:%d,%d:%d] %s/CFHTLS_%s_%04d_%s.fits \n' %(band[ll],fldid[kk],(ii*dx)+1,(ii*dx)+wd, (jj*dx)+1,(jj*dx)+wd,dirname,indxno[kk],jj+1+(Ntot*ii),band[ll]));
+                fp.write('fitscopy.out fitsfiles/'+t_prefix+'_%s_%s'%(band[ll],fldid[kk])+t_affix+'.fits[%d:%d,%d:%d] %s/'%((ii*dx)+1,(ii*dx)+wd,(jj*dx)+1,(jj*dx)+wd,dirname)+c_prefix+'_%s_%04d_%s.fits \n' %(indxno[kk],jj+1+(Ntot*ii),band[ll]));
 #                if 'CFHTLS_%s_%04d_%s.fits'%(indxno[kk],jj+1+(Ntot*ii),band[ll])=='CFHTLS_078_2491_g.fits':
 #                        print('fitsfiles/CFHTLS_W_%s_%s_T0007_MEDIAN.fits'%(band[ll],fldid[kk]))
-                fitscopy_astropy('fitsfiles/CFHTLS_W_%s_%s_T0007_MEDIAN.fits'%(band[ll],fldid[kk]),'%s/CFHTLS_%s_%04d_%s.fits'%(dirname,indxno[kk],jj+1+(Ntot*ii),band[ll]),(ii*dx)+1,(ii*dx)+wd, (jj*dx)+1,(jj*dx)+wd)
+                fitscopy_astropy('fitsfiles/'+t_prefix+'_%s_%s'%(band[ll],fldid[kk])+t_affix+'.fits','%s/'%(dirname)+c_prefix+'_%s_%04d_%s.fits'%(indxno[kk],jj+1+(Ntot*ii),band[ll]),(ii*dx)+1,(ii*dx)+wd, (jj*dx)+1,(jj*dx)+wd)
                 fp2.write('%d %d %d %d %04d \n'%((ii*dx)+1,(ii*dx)+wd, (jj*dx)+1,(jj*dx)+wd,jj+1+(Ntot*ii)));
     fp.close();
     fp1.write('imdir/rcutout_%s \n'%(indxno[kk]));
@@ -66,7 +74,7 @@ fp2.close();
 call("chmod +x imdir/rcutout_* imdir/rcoutall",shell=1);
 
 '''
-f=open('/Users/hollowayp/simct/code/final_images/cutoutlist')
+f=open(home_directory+'/code/final_images/cutoutlist')
 i=0
 for line in f:
   i+=1

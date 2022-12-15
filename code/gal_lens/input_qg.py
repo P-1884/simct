@@ -4,6 +4,8 @@
 import sys
 from math import *
 import numpy as np
+from filenames import bands,survey_func,pixel_scale_func,seeing_func
+survey=survey_func()
 ## Setting up Cosmology
 ##################
 ## Add the full path to aum_mini and the configfile below
@@ -34,10 +36,15 @@ cc=c.cosmology(p);
 ##################
 ## Input foreground and background catalogs
 #lenscatalog='../../catalogs/test_gal.txt'
-lenscatalog='../../catalogs/inp_gal_frg_cat_w2.txt'
-bkgqsocatalog="../../catalogs/inp_qso_bkg_cat.txt"
-bkggalcatalog="../../catalogs/inp_gal_bkg_cat.txt"
+if survey=='CFHTLS':
+  lenscatalog='../../catalogs/inp_gal_frg_cat_w2.txt'
+  bkgqsocatalog="../../catalogs/inp_qso_bkg_cat.txt"
+  bkggalcatalog="../../catalogs/inp_gal_bkg_cat.txt"
 
+if survey=='VIDEO':
+  lenscatalog='../../catalogs/video_catalog.txt'
+  bkgqsocatalog='../../catalogs/video_qso_bkg_catalog.txt'
+  bkggalcatalog='../../catalogs/video_gal_bkg_catalog.txt'
 ## Path to keeton's lensmodel executable
 lenscode="/Users/hollowayp/Documents/gravlens/lensmodel"
 
@@ -45,9 +52,8 @@ lenscode="/Users/hollowayp/Documents/gravlens/lensmodel"
 gee=4.2994e-9;
 cspd=299792.458;
 
-## Pixel scale
-pixsc=0.186;
-
+#pixel scale
+pixsc = pixel_scale_func(survey)
 ## Zeropoint for the survey
 zpt=30;
 
@@ -123,11 +129,10 @@ bkggal_ellpa_high=180.;
 ## See genimg.py
 ##################
 ## FWHM of seeing in arcsec
-sig=[0.85,0.78,0.71,0.64,0.68];
-
+sig = seeing_func(survey)
 ## Set image size of the sims
 imsize=101;
-band=['g','r','i']
+band=bands(survey)
 exptime=np.array([600.,600.,600.])##,600.])
 
 ## See remcllens.py

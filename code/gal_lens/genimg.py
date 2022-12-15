@@ -5,16 +5,17 @@ from subprocess import call
 import os
 import pyfits
 from input_qg import *
-
+from filenames import bands,survey_func
+survey=survey_func()
 ## Spatial scales are in pixels and flux is converted to counts/sec
 ## 201 pix is the image size of each simulated image
 ## ugriz are the 5 bands that are being simulated here
 
 ## Gravlens file to generate simulated quasar lensed images
 def genimg_gq(reinst,ell,ell_pa,sh_str,sh_pa,su,sg,sr,si,sz,srcx,srcy,zpt,gid,indxno,num):
-
+    indxno=str(int(float(indxno))).zfill(3) #Adds in leading zeros where necessary
     ## For various bands
-    band=['u','g','r','i','z'];
+    band=bands(survey);
 
     ## FWHM of seeing in arcsec
   # sig=[0.85,0.78,0.71,0.64,0.68];
@@ -34,7 +35,7 @@ def genimg_gq(reinst,ell,ell_pa,sh_str,sh_pa,su,sg,sr,si,sz,srcx,srcy,zpt,gid,in
     np.savetxt(fp,['startup 1 1'],fmt='%s');
     fp.write('alpha %f 0 0 %f %f %f %f 0 0 1 \n' %(reinst,ell,ell_pa,sh_str,sh_pa));
     np.savetxt(fp,[' 0 0 0 0 0 0 0 0 0 0 '],fmt='%s \n');
-    fp.write('findimg %f %f \n'%(srcx,srcy));	
+    fp.write('findimg %f %f \n'%(srcx,srcy));
     np.savetxt(fp,['quit'],fmt='%s');
     fp.close();
 
@@ -66,15 +67,16 @@ def genimg_gq(reinst,ell,ell_pa,sh_str,sh_pa,su,sg,sr,si,sz,srcx,srcy,zpt,gid,in
     ## Calculate flux of the lensed images in each band
     for aa in range(201):
         for bb in range(201):
-	    for nn in range(imx.size):
-		arru[aa,bb]=arru[aa,bb]+flxu*abs(immag[nn])/(2.*pi*sig[0]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[0]**2.) ) ;
-		arrg[aa,bb]=arrg[aa,bb]+flxg*abs(immag[nn])/(2.*pi*sig[1]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[1]**2.) ) ;
-		arrr[aa,bb]=arrr[aa,bb]+flxr*abs(immag[nn])/(2.*pi*sig[2]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[2]**2.) ) ;
-		arri[aa,bb]=arri[aa,bb]+flxi*abs(immag[nn])/(2.*pi*sig[3]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[3]**2.) ) ;
-		arrz[aa,bb]=arrz[aa,bb]+flxz*abs(immag[nn])/(2.*pi*sig[4]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[4]**2.) ) ;
+            for nn in range(imx.size):
+                #For *Quasars*, treats the sources as a point source with width equivalent to the seeing.
+                arru[aa,bb]=arru[aa,bb]+flxu*abs(immag[nn])/(2.*pi*sig[0]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[0]**2.) ) ;
+                arrg[aa,bb]=arrg[aa,bb]+flxg*abs(immag[nn])/(2.*pi*sig[1]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[1]**2.) ) ;
+                arrr[aa,bb]=arrr[aa,bb]+flxr*abs(immag[nn])/(2.*pi*sig[2]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[2]**2.) ) ;
+                arri[aa,bb]=arri[aa,bb]+flxi*abs(immag[nn])/(2.*pi*sig[3]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[3]**2.) ) ;
+                arrz[aa,bb]=arrz[aa,bb]+flxz*abs(immag[nn])/(2.*pi*sig[4]**2.) * exp( -((aa-imy[nn])**2.+(bb-imx[nn])**2.)/(2*sig[4]**2.) ) ;
 
     ## Write FITS images with quasar lensed images as Gaussians of the size of
-    ## the seeing 
+    ## the seeing
     print "qout/gqlens%s_im.in qout/imoutp_%s_%d_u.fits \n" % (gid,indxno,gid);
     hdu = pyfits.PrimaryHDU(arru);
     hdulist = pyfits.HDUList([hdu]);
@@ -99,9 +101,9 @@ def genimg_gq(reinst,ell,ell_pa,sh_str,sh_pa,su,sg,sr,si,sz,srcx,srcy,zpt,gid,in
 
 ## Gravlens file to generate simulated galaxy lensed images
 def genimg_gg(reinst,ell,ell_pa,sh_str,sh_pa,su,sg,sr,si,sz,srcx,srcy,ell_s,ell_pa_s,reff_s,zpt,gid,indxno,num):
-
+    indxno=str(int(float(indxno))).zfill(3) #Adds in leading zeros where necessary
     ## For various bands
-    band=['u','g','r','i','z'];
+    band=bands(survey);
     ## Create the gravlens file for each lens
     fvar='';
     fvar += ('gout/gglens%s_%s_im.in' % (gid,indxno));
@@ -118,28 +120,29 @@ def genimg_gg(reinst,ell,ell_pa,sh_str,sh_pa,su,sg,sr,si,sz,srcx,srcy,ell_s,ell_
 
     ## Loop over each band
     for kk in range(len(band)):
-	if(kk==0):
-	    mag=su;
-	elif(kk==1):
-	    mag=sg;
-	elif(kk==2):
-	    mag=sr;
-	elif(kk==3):
-	    mag=si;
-	elif(kk==4):
-	    mag=sz;
+        if(kk==0):
+            mag=su;
+        elif(kk==1):
+            mag=sg;
+        elif(kk==2):
+            mag=sr;
+        elif(kk==3):
+            mag=si;
+        elif(kk==4):
+            mag=sz;
 
-	flux=10.**(-0.4*(mag-zpt));
-	
-	## Using deVaucouler's profile, since the size-lum relation is used
-	## for this profile and hence, the reff corresponds to the half-light
-	## radius for that profile
-	np.savetxt(fp,['setsource 1 1'],fmt='%s');
-	fp.write('sersic %f %f %f %f %f %f 0 0.5 macro \n' %(flux,srcx,srcy,ell_s,ell_pa_s,reff_s));
-	np.savetxt(fp,[' 0 0 0 0 0 0 0 0 '],fmt='%s \n');
-
-	fp.write('SBmap2 -100 100 201 -100 100 201 1 imout_%s_%d_%s.fits 3 \n' % (indxno,gid,band[kk]));
-	fp.write('convolve1 imout_%s_%d_%s.fits 3  psfcfh_%s.fits 3 imoutp_%s_%d_%s.fits 3 \n \n' % (indxno,gid,band[kk],band[kk],indxno,gid,band[kk]));
+        flux=10.**(-0.4*(mag-zpt));
+        
+        ## Using deVaucouler's profile, since the size-lum relation is used
+        ## for this profile and hence, the reff corresponds to the half-light
+        ## radius for that profile
+        np.savetxt(fp,['setsource 1 1'],fmt='%s');
+        fp.write('sersic %f %f %f %f %f %f 0 0.5 macro \n' %(flux,srcx,srcy,ell_s,ell_pa_s,reff_s));
+        np.savetxt(fp,[' 0 0 0 0 0 0 0 0 '],fmt='%s \n');
+        #For *galaxies*, the images are convolved with the psf:
+        fp.write('SBmap2 -100 100 201 -100 100 201 1 imout_%s_%d_%s.fits 3 \n' % (indxno,gid,band[kk]));
+        print(band)
+        fp.write('convolve1 imout_%s_%d_%s.fits 3  psfcfh_%s.fits 3 imoutp_%s_%d_%s.fits 3 \n \n' % (indxno,gid,band[kk],band[kk],indxno,gid,band[kk]));
 
 
     np.savetxt(fp,['quit'],fmt='%s');

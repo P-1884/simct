@@ -8,12 +8,18 @@ from math import *;
 from subprocess import call;
 import sys
 import pandas as pd
-
+import os
+from tqdm import tqdm
+home_directory = os.getcwd().split('simct',1)[0]+'simct'
+sys.path.append(home_directory+'/code/gal_lens')
+from filenames import filenames,bands,survey_func
+survey=survey_func()
+c_prefix,t_prefix,t_affix=filenames(survey)
 if(len(sys.argv)!=3):
         print "./gencombim2.py dirname inpcat";
         sys.exit(0);
 else:
-#dirname='/Users/hollowayp/simct/code/final_images/Final_Output/'
+#dirname=home_directory+'/code/final_images/Final_Output/'
 #inpcat = 'inpgal.txt'
         dirname=sys.argv[1];
         inpcat=sys.argv[2];#had to move these up by one as needed to add 'python2' to the code line.
@@ -21,13 +27,17 @@ else:
 ## Input Catalog
 #id, ra, dec, tile, tile_id, pixel position 1, pixel position 2
 gid,gra,gdec,fld,fldid,gxpx,gypx=np.loadtxt(inpcat,dtype={'names': ('gid','gra', 'gdec','fld','fldid','gxpx','gypx'), 'formats': ('d', 'f', 'f', 'S13', 'S3','f','f')},unpack=True);
+print(gid,gra,gdec,fld,fldid,gxpx,gypx)
+fldid=np.array([str(int(float(fldid[i]))).zfill(3) for i in range(len(fldid))]) #Adds in leading zeros where necessary:
+print('dirname',dirname)
 ## List with xmin,xmax,ymin,ymax of the contiguous cutouts made for each survey
 ## tile
 #offsetx,offsety,l1,l3,l4=np.loadtxt("cutoutlist",usecols=(0,2,1,3,4),unpack=True);
 cutout_table=pd.DataFrame(np.loadtxt("cutoutlist",usecols=(0,1,2,3,4),unpack=True).T,columns=['offset1','l1','offset2','l3','cutoutn'])
+print(cutout_table)
 ################
 
-band=['u','g','r','i','z'];
+band=bands(survey)
 Ntot=len(band);
 
 call("rm imdir/lstfile* imdir/rm*_* imdir/rimst_*",shell=1);
@@ -37,12 +47,13 @@ def writefiles(dirname,var,var1,fldid,gid,ofstx,ofsty):
         for kk in range(Ntot):
 #                print('fimgmerge ../outfits/%s_%s_t.fits  @lstfile_%s_%s ../outfits1/%s_%s.fits \n'%(var,band[kk],var1,band[kk],var,band[kk]))
                 #Had to change this here as the cutouts weren't put into subfolders?
+                print('cp %s/%s_%s.fits ../outfits/%s_%s_t.fits \n'%(dirname,var,band[kk],var,band[kk]))
                 fp1.write('cp %s/%s_%s.fits ../outfits/%s_%s_t.fits \n'%(dirname,var,band[kk],var,band[kk]));
 #                print("{ printf(\"../gout/imoutp_'%s'_'%d'_'%s'.fits,'%f','%f' \\n \" );}\' gg >> imdir/lstfile_'%s'_'%s'"%(fldid,gid,band[kk],ofstx,ofsty,var1,band[kk]))
 #                f_i = "../gout/imoutp_'%s'_'%d'_'%s'.fits"%(fldid,gid,band[kk])
                 #Have re-written the awk function below, using open(),close() instead, as the awk function just seemed to make empty files?
                 f_i = open("imdir/lstfile_%s_%s"%(var1,band[kk]),'a') #opening file in 'append' mode so text is added to the end of it and not overwritten.
-                f_i.write("../gout/imoutp_%s_%d_%s.fits,%f,%f"%(fldid,gid,band[kk],ofstx,ofsty))
+                f_i.write("../gout/imoutp_%s_%d_%s.fits,%f,%f\n"%(fldid,gid,band[kk],ofstx,ofsty))
                 f_i.close()
                 #This writes name of the file as well as the lensed-image position into a file imdir/lstfile_....
                 #Think this function prints a file name and two coordinates (within the {} bit) into an lstfile:
@@ -50,7 +61,7 @@ def writefiles(dirname,var,var1,fldid,gid,ofstx,ofsty):
                 #This writes a programme to merge this onto a background image
                 fp.write('fimgmerge ../outfits/%s_%s_t.fits  @lstfile_%s_%s ../outfits1/%s_%s.fits \n'%(var,band[kk],var1,band[kk],var,band[kk]));
                 fp2.write('fimgmerge blnkcutout.fits  @lstfile_%s_%s ../blanksims/%s_%s.fits \n'%(var1,band[kk],var,band[kk]));
-                fp3.write('./getimstat.py ../outfits1/%s_%s.fits\n'%(var,band[kk]));
+                fp3.write('python2 '+ home_directory+'/code/final_images/getimstat.py ../outfits1/%s_%s.fits\n'%(var,band[kk]));
 
 
 fpw=open('imdir/rmrgall','w');
@@ -65,7 +76,7 @@ fpw2.write('#!/bin/bash \n');
 fpw3.write('#!/bin/bash \n');
 
 flag=1;
-for ii in range(gid.size):
+for ii in tqdm(range(gid.size)):
         if (gxpx[ii]==-99.0)or(gypx[ii]==-99.0): #i.e. if they are not defined
             continue
         ix=int((gxpx[ii]+0.5)/386.0); #the 386 might be something to do with the cutoutlist file? columns 0 and 2 go up in 386's. Update: The 386 value is from mkcutouts.py, where 386 = 'the pixel offset between neighbouring cutouts, since we would like to  have some overlapping region'. The width of each cutout is 440pixels, also set in mkcutouts.py
@@ -126,20 +137,27 @@ for ii in range(gid.size):
                 flag=0;
 #
         if(fldid[ii]==fldid[ii-1] or flag==0):
+                print(ctn1,ctn2,ctn3,ctn4)
  #               print "Writing:",ii+1,int(gid[ii]),fldid[ii];
                 if(ctn1>0):
-                        var="CFHTLS_%s_%04d"%(fldid[ii],ctn1);
+                        var=c_prefix+"_%s_%04d"%(fldid[ii],ctn1);
                         var1="%s_%04d"%(fldid[ii],ctn1);
-                        ofstx=dgx-float(np.array(cutout_table[cutout_table['cutoutn']==ctn1]['offset1'])[0])
-                        ofsty=dgy-float(np.array(cutout_table[cutout_table['cutoutn']==ctn1]['offset2'])[0])
+                        try:
+                            ofstx=dgx-float(np.array(cutout_table[cutout_table['cutoutn']==ctn1]['offset1'])[0])
+                            ofsty=dgy-float(np.array(cutout_table[cutout_table['cutoutn']==ctn1]['offset2'])[0])
+                        except Exception as ex:
+                            print("Error here, probably because of cutout number (ctn) exceeding the max cutout-number in cutoutlist. Probably caused by not processing all the elements in a previous table.")
+                            print(ex)
+                            break
 #                        ofstx=dgx-offsetx[ctn1-1];
 #                        ofsty=dgy-offsety[ctn1-1];
                         #if the ofstx or ofsty are =-200, it is because the inpgal.txt file has -99's in it (i.e. blank entries).
+                        print(' %s %d %f %f \n'%(var1,gid[ii],ofstx+102,ofsty+102))
                         fpw4.write(' %s %d %f %f \n'%(var1,gid[ii],ofstx+102,ofsty+102));
                         writefiles(dirname,var,var1,fldid[ii],gid[ii],ofstx,ofsty)#modx-101,mody-101);
         #
                 if(ctn2>0):
-                        var="CFHTLS_%s_%04d"%(fldid[ii],ctn2);
+                        var=c_prefix+"_%s_%04d"%(fldid[ii],ctn2);
                         var1="%s_%04d"%(fldid[ii],ctn2);
 #                        ofstx=dgx-offsetx[ctn2-1];
 #                        ofsty=dgy-offsety[ctn2-1];
@@ -149,7 +167,7 @@ for ii in range(gid.size):
                         writefiles(dirname,var,var1,fldid[ii],gid[ii],ofstx,ofsty);
         #
                 if(ctn3>0):
-                        var="CFHTLS_%s_%04d"%(fldid[ii],ctn3);
+                        var=c_prefix+"_%s_%04d"%(fldid[ii],ctn3);
                         var1="%s_%04d"%(fldid[ii],ctn3);
 #                        ofstx=dgx-offsetx[ctn3-1];
 #                        ofsty=dgy-offsety[ctn3-1];
@@ -159,7 +177,7 @@ for ii in range(gid.size):
                         writefiles(dirname,var,var1,fldid[ii],gid[ii],ofstx,ofsty);
         #
                 if(ctn4>0):
-                        var="CFHTLS_%s_%04d"%(fldid[ii],ctn4);
+                        var=c_prefix+"_%s_%04d"%(fldid[ii],ctn4);
                         var1="%s_%04d"%(fldid[ii],ctn4);
 #                        ofstx=dgx-offsetx[ctn4-1];
 #                        ofsty=dgy-offsety[ctn4-1];

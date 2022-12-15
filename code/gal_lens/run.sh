@@ -18,6 +18,8 @@
 ## Extract lenses with Reinst between 1.5 and 2 arcsec only
 ###########################################################
  rm GAL*.txt QSO*.txt LOG*.txt
+ rm gout/LOG*
+
  echo main.py
  python2 ./main.py
 
@@ -71,9 +73,10 @@ cat fpar1_?.txt fpar1_??.txt | sort -n -k1 -u > finalpar1.txt
 ## catalog with lens+galaxy properties
 ###########################################################
 rm mckg/* fpar0_*
-#rm gout/gg* in gout/imout*fits
+rm gout/gg* in gout/imout*fits
 echo main_gal.py
 python2 ./main_gal.py
+#-k1 sorts by the first field, -n sorts by numeric value, -u flag, ignores duplicate values.
 cat fpar0_?.txt fpar0_??.txt | sort -n -k1 -u > finalpar0.txt
 mv fpar?_*txt gal_qso/
 

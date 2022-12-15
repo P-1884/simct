@@ -1,18 +1,19 @@
 #!/usr/bin/python2.7
-import pyfits
+from astropy.io import fits
 from math import *
 import numpy as np
 import sys
-
+print(sys.argv)
 ### Add min, max, median and mean of the image to its header
 if(len(sys.argv)!=2):
     print "./getimstat.py finp.fits";
+    print('ERROR IN GETIMSTAT.PY')
     sys.exit(0);
 else:
     fname1=sys.argv[1];
 
 ###def addstats(filefits):
-hdulist=pyfits.open(fname1,mode='update');
+hdulist=fits.open(fname1,mode='update');
 data=hdulist[0].data;
 
 #### exclude pixels with value 0, when estimating the following stats
@@ -30,3 +31,5 @@ hdulist[0].header['MEDIAN']=median;
 hdulist[0].header['MEAN']=mean;
 
 hdulist.close();
+print('Completed getimstat.py')
+#Output to this file is put into LOG.rimst_XXX.dat within final_images/imdir.

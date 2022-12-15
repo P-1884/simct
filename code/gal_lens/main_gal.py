@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from math import *
+import pandas as pd
 from subprocess import call
 import multiprocessing
 import time
@@ -9,6 +10,8 @@ import gensrcpos as scp
 import genimg as gn
 from input_qg import *
 from tqdm import tqdm
+from filenames import survey_func
+survey=survey_func()
 ###########################################################
 ## INPUTS: 
 ## Foreground galaxy catalog with lens model properties as output by
@@ -30,7 +33,21 @@ def worker(num,nproc):
         gfld0,indx0=np.loadtxt('intmpar0.txt',dtype={'names':('gfld0','indx0'),'formats':('S13','S3')},usecols=(3,4),unpack=True);
     else:
         gfld0,indxno0=np.loadtxt('intmpar0.txt',dtype={'names':('gfld0','indxno0'),'formats':('S13','S3')},usecols=(3,4),unpack=True);
-    zsc_g,zsc_mn,zsc_mx,su,sg,sr,si,sz=np.loadtxt(bkggalcatalog,usecols=(5,6,7,8,9,10,11,12),unpack=True);
+    if survey=='CFHTLS':
+#0         1   2     3         4         5        6      7     8     9      10   11    12
+#object_id RA DEC class_star fitclass Z_REDSHIFT Z_LOW Z_HIGH U_MAG G_MAG R_MAG I_MAG Z_MAG
+        zsc_g,zsc_mn,zsc_mx,su,sg,sr,si,sz=np.loadtxt(bkggalcatalog,usecols=(5,6,7,8,9,10,11,12),unpack=True);
+    if survey=='VIDEO':
+      print('main_gal.py: NOT PROCESSING THE WHOLE CATALOGUE HERE')
+      bkglenscatalog_db = pd.read_csv(bkggalcatalog,sep=' ').iloc[0:10000]
+      zsc_g = np.array(bkglenscatalog_db['z'])  
+      zsc_mn = np.array(bkglenscatalog_db['z_low'])
+      zsc_mx = np.array(bkglenscatalog_db['z_high'])
+      su=np.array(bkglenscatalog_db['Z_mag'])
+      sg=np.array(bkglenscatalog_db['Y_mag'])
+      sr=np.array(bkglenscatalog_db['J_mag'])
+      si=np.array(bkglenscatalog_db['H_mag'])
+      sz=np.array(bkglenscatalog_db['K_mag'])        
     idxt0,sigm0,rein0,smii0,zs0=np.loadtxt("all_gal_mod.txt",unpack=True);
     rein0=rein0/pixsc;
 

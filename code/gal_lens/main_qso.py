@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from math import *
+import pandas as pd
 from subprocess import call
 import multiprocessing
 import time
@@ -8,7 +9,8 @@ import sys
 import gensrcpos as scp
 import genimg as gn
 from input_qg import *
-
+from filenames import survey_func
+survey=survey_func()
 ###########################################################
 ## INPUTS: 
 ## Foreground galaxy catalog with lens model properties as output by
@@ -32,9 +34,18 @@ def worker(num,nproc):
 	gfld1,indx1=np.loadtxt('intmpar1.txt',dtype={'names':('gfld1','indx1'),'formats':('S13','S3')},usecols=(3,4),unpack=True);
     else:
 	gfld1,indxno1=np.loadtxt('intmpar1.txt',dtype={'names':('gfld1','indxno1'),'formats':('S13','S3')},usecols=(3,4),unpack=True);
-     
-    zsc_q,qu,qg,qr,qi,qz=np.loadtxt(bkgqsocatalog,usecols=(3,5,6,7,8,9),unpack=True);
-
+    if survey=='CFHTLS':
+#   0      1   2       3       4     5     6     7     8     9
+#object_id RA DEC Z_REDSHIFT Z_ERR U_MAG G_MAG R_MAG I_MAG Z_MAG
+        zsc_q,qu,qg,qr,qi,qz=np.loadtxt(bkgqsocatalog,usecols=(3,5,6,7,8,9),unpack=True);
+    if survey=='VIDEO':
+      bkglenscatalog_db = pd.read_csv(bkgqsocatalog,sep=' ')
+      zsc_q = np.array(bkglenscatalog_db['z'])
+      qu=np.array(bkglenscatalog_db['Z_mag'])
+      qg=np.array(bkglenscatalog_db['Y_mag'])
+      qr=np.array(bkglenscatalog_db['J_mag'])
+      qi=np.array(bkglenscatalog_db['H_mag'])
+      qz=np.array(bkglenscatalog_db['K_mag'])
     idxt1,sigm1,rein1,smii1,zs1=np.loadtxt("all_qso.txt",unpack=True);
     
     rein1=rein1/pixsc;
